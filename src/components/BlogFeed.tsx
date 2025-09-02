@@ -80,15 +80,7 @@ const BlogFeed = () => {
         <div className="flex-1 ml-80">
           {/* Header */}
           <div className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
-            <div className="flex items-center justify-between px-8 py-4">
-              <div>
-                <Button
-                  variant="outline"
-                  className="bg-gradient-primary text-primary-foreground hover:opacity-90"
-                >
-                  Next post
-                </Button>
-              </div>
+            <div className="flex items-center justify-end px-8 py-4">
               <Button
                 variant="outline"
                 size="icon"
@@ -139,13 +131,6 @@ const BlogFeed = () => {
                 </p>
               </Card>
             )}
-
-            {/* Navigation Footer */}
-            <div className="mt-12 pt-8 border-t text-center">
-              <Button variant="outline" className="bg-gradient-primary text-primary-foreground hover:opacity-90">
-                Previous post
-              </Button>
-            </div>
           </div>
         </div>
       </div>

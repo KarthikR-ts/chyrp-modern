@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { enhancedMockPosts } from "@/data/enhancedMockPosts";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   ArrowLeft, 
+  ArrowRight,
   Edit, 
   Trash2, 
   Heart, 
@@ -15,7 +16,9 @@ import {
   Eye,
   Calendar,
   User,
-  Tag as TagIcon
+  Tag as TagIcon,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useLikes } from "@/hooks/useLikes";
@@ -38,6 +41,14 @@ export default function PostDetail() {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   
   const { toggleLike, isLiking } = useLikes();
+
+  // Find current post index and navigation posts
+  const currentIndex = useMemo(() => 
+    enhancedMockPosts.findIndex(p => p.id === id), [id]
+  );
+  
+  const previousPost = currentIndex > 0 ? enhancedMockPosts[currentIndex - 1] : null;
+  const nextPost = currentIndex < enhancedMockPosts.length - 1 ? enhancedMockPosts[currentIndex + 1] : null;
 
   if (!post) {
     return (
@@ -65,6 +76,18 @@ export default function PostDetail() {
   const handleAddComment = async (commentData: any) => {
     console.log('Adding comment:', commentData);
     return Promise.resolve();
+  };
+
+  const navigateToPrevious = () => {
+    if (previousPost) {
+      navigate(`/post/${previousPost.id}`);
+    }
+  };
+
+  const navigateToNext = () => {
+    if (nextPost) {
+      navigate(`/post/${nextPost.id}`);
+    }
   };
 
   // Process content for math, code, hashtags, and markdown
@@ -131,15 +154,38 @@ export default function PostDetail() {
   return (
     <div className="min-h-screen bg-gradient-subtle">
       <div className="container mx-auto py-8 px-4 max-w-4xl">
-        {/* Back Button */}
-        <Button 
-          variant="ghost" 
-          onClick={() => navigate("/")}
-          className="mb-6 hover-lift"
-        >
-          <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Blog
-        </Button>
+        {/* Navigation Header */}
+        <div className="flex items-center justify-between mb-6">
+          <Button 
+            variant="ghost" 
+            onClick={() => navigate("/")}
+            className="hover-lift"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Blog
+          </Button>
+          
+          <div className="flex items-center space-x-2">
+            <Button
+              variant="outline"
+              onClick={navigateToPrevious}
+              disabled={!previousPost}
+              className={`hover-lift ${!previousPost ? 'opacity-50 cursor-not-allowed' : 'bg-gradient-primary text-primary-foreground hover:opacity-90'}`}
+            >
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              onClick={navigateToNext}
+              disabled={!nextPost}
+              className={`hover-lift ${!nextPost ? 'opacity-50 cursor-not-allowed' : 'bg-gradient-primary text-primary-foreground hover:opacity-90'}`}
+            >
+              Next
+              <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          </div>
+        </div>
 
         {/* Post */}
         <Card className="blog-card overflow-hidden">
@@ -316,6 +362,49 @@ export default function PostDetail() {
             />
           </div>
         </Card>
+
+        {/* Post Navigation Footer */}
+        <div className="flex items-center justify-between mt-8">
+          {previousPost ? (
+            <div className="flex-1 mr-4">
+              <Button
+                variant="outline"
+                onClick={navigateToPrevious}
+                className="w-full justify-start p-4 h-auto bg-gradient-primary text-primary-foreground hover:opacity-90"
+              >
+                <div className="text-left">
+                  <div className="flex items-center text-sm opacity-80 mb-1">
+                    <ChevronLeft className="w-4 h-4 mr-1" />
+                    Previous Post
+                  </div>
+                  <div className="font-medium truncate">{previousPost.title}</div>
+                </div>
+              </Button>
+            </div>
+          ) : (
+            <div className="flex-1 mr-4"></div>
+          )}
+          
+          {nextPost ? (
+            <div className="flex-1 ml-4">
+              <Button
+                variant="outline"
+                onClick={navigateToNext}
+                className="w-full justify-end p-4 h-auto bg-gradient-primary text-primary-foreground hover:opacity-90"
+              >
+                <div className="text-right">
+                  <div className="flex items-center justify-end text-sm opacity-80 mb-1">
+                    Next Post
+                    <ChevronRight className="w-4 h-4 ml-1" />
+                  </div>
+                  <div className="font-medium truncate">{nextPost.title}</div>
+                </div>
+              </Button>
+            </div>
+          ) : (
+            <div className="flex-1 ml-4"></div>
+          )}
+        </div>
 
         {/* Lightbox */}
         <Lightbox
