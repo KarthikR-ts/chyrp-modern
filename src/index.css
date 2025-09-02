@@ -168,4 +168,34 @@ All colors MUST be HSL.
   .hover-lift {
     @apply transition-all duration-300 hover:translate-y-[-2px];
   }
+  
+  .hashtag {
+    @apply text-primary font-medium cursor-pointer hover:underline;
+  }
+  
+  .gradient-pattern {
+    background: var(--gradient-subtle);
+  }
+  
+  .subtle-pattern {
+    background: var(--gradient-subtle);
+  }
+  
+  .solid-pattern {
+    background: hsl(var(--background));
+  }
+  
+  .dots-pattern {
+    background: hsl(var(--background));
+    background-image: radial-gradient(hsl(var(--muted)) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+  
+  .grid-pattern {
+    background: hsl(var(--background));
+    background-image: 
+      linear-gradient(hsl(var(--border)) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--border)) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
 }

@@ -1,10 +1,12 @@
 import BlogPost from "./BlogPost";
 import { enhancedMockPosts } from "@/data/enhancedMockPosts";
+import { Sidebar } from "@/components/Sidebar/Sidebar";
+import { ThemeCustomizer } from "@/components/ThemeCustomizer/ThemeCustomizer";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { TrendingUp, Calendar, Tag, Filter } from "lucide-react";
+import { Settings } from "lucide-react";
 import { useState } from "react";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { useCache } from "@/hooks/useCache";
@@ -14,6 +16,7 @@ const BlogFeed = () => {
   const [hasMore, setHasMore] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [themeCustomizerOpen, setThemeCustomizerOpen] = useState(false);
   
   const cache = useCache();
   
@@ -58,68 +61,50 @@ const BlogFeed = () => {
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
-      <div className="container mx-auto py-8 px-4">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Main Content */}
-          <div className="lg:col-span-3 space-y-6">
-            {/* Hero Section */}
-            <div className="text-center mb-12">
-              <h2 className="text-4xl font-bold gradient-text mb-4">
-                Welcome to Modern Chyrp
-              </h2>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                A lightweight, extensible blogging platform that adapts to your content. 
-                Share your thoughts, photos, quotes, and discoveries in style.
-              </p>
+      <div className="flex">
+        {/* Sidebar */}
+        <div className="w-80 min-h-screen bg-background border-r border-border p-6 fixed left-0 top-0 overflow-y-auto">
+          <Sidebar
+            selectedCategory={selectedCategory}
+            selectedTag={selectedTag}
+            onCategorySelect={setSelectedCategory}
+            onTagSelect={setSelectedTag}
+            categories={categories}
+            tags={popularTags}
+          />
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 ml-80">
+          {/* Header */}
+          <div className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b border-border">
+            <div className="flex items-center justify-between px-8 py-4">
+              <div>
+                <Button
+                  variant="outline"
+                  className="bg-gradient-primary text-primary-foreground hover:opacity-90"
+                >
+                  Next post
+                </Button>
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setThemeCustomizerOpen(true)}
+                className="hover-lift"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
             </div>
+          </div>
 
-            {/* Filter Bar */}
-            {(selectedCategory || selectedTag) && (
-              <Card className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Filter className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-medium">Filtered by:</span>
-                    {selectedCategory && (
-                      <Badge variant="secondary">
-                        Category: {selectedCategory}
-                        <button
-                          onClick={() => setSelectedCategory(null)}
-                          className="ml-1 text-xs hover:text-destructive"
-                        >
-                          ×
-                        </button>
-                      </Badge>
-                    )}
-                    {selectedTag && (
-                      <Badge variant="secondary">
-                        Tag: {selectedTag}
-                        <button
-                          onClick={() => setSelectedTag(null)}
-                          className="ml-1 text-xs hover:text-destructive"
-                        >
-                          ×
-                        </button>
-                      </Badge>
-                    )}
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedCategory(null);
-                      setSelectedTag(null);
-                    }}
-                  >
-                    Clear Filters
-                  </Button>
-                </div>
-              </Card>
-            )}
-
+          {/* Content */}
+          <div className="p-8 max-w-4xl">
             {/* Posts */}
             {filteredPosts.map((post) => (
-              <BlogPost key={post.id} post={post} />
+              <div key={post.id} className="mb-8">
+                <BlogPost post={post} />
+              </div>
             ))}
 
             {/* Loading Indicator */}
@@ -152,79 +137,22 @@ const BlogFeed = () => {
                 </p>
               </Card>
             )}
-          </div>
 
-          {/* Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Categories */}
-            <Card className="p-6">
-              <div className="flex items-center space-x-2 mb-4">
-                <Calendar className="w-4 h-4 text-primary" />
-                <h3 className="font-semibold">Categories</h3>
-              </div>
-              <div className="space-y-2">
-                {categories.map((category) => (
-                  <button
-                    key={category}
-                    onClick={() => setSelectedCategory(
-                      selectedCategory === category ? null : category
-                    )}
-                    className={`block w-full text-left text-sm transition-colors hover-lift p-2 rounded ${
-                      selectedCategory === category 
-                        ? 'bg-primary text-primary-foreground' 
-                        : 'text-muted-foreground hover:text-primary hover:bg-accent'
-                    }`}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
-            </Card>
-
-            {/* Popular Tags */}
-            <Card className="p-6">
-              <div className="flex items-center space-x-2 mb-4">
-                <Tag className="w-4 h-4 text-primary" />
-                <h3 className="font-semibold">Popular Tags</h3>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {popularTags.map((tag) => (
-                  <Badge 
-                    key={tag} 
-                    variant={selectedTag === tag ? "default" : "secondary"}
-                    className="cursor-pointer hover:bg-accent hover-lift"
-                    onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
-                  >
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            </Card>
-
-            {/* Cache Stats */}
-            <Card className="p-6">
-              <div className="flex items-center space-x-2 mb-4">
-                <TrendingUp className="w-4 h-4 text-primary" />
-                <h3 className="font-semibold">Performance</h3>
-              </div>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Cache Hits</span>
-                  <span className="text-sm font-medium">{cache.stats.hits}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Cache Size</span>
-                  <span className="text-sm font-medium">{cache.stats.size}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Total Posts</span>
-                  <span className="text-sm font-medium">{enhancedMockPosts.length}</span>
-                </div>
-              </div>
-            </Card>
+            {/* Navigation Footer */}
+            <div className="mt-12 pt-8 border-t text-center">
+              <Button variant="outline" className="bg-gradient-primary text-primary-foreground hover:opacity-90">
+                Previous post
+              </Button>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Theme Customizer */}
+      <ThemeCustomizer
+        isOpen={themeCustomizerOpen}
+        onClose={() => setThemeCustomizerOpen(false)}
+      />
     </div>
   );
 };

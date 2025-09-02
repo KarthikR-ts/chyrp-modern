@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { FileText, Camera, Quote, ExternalLink, Heart, MessageCircle, Share2, Eye, Image, Code } from "lucide-react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useLikes } from "@/hooks/useLikes";
 import { ReadMore } from "@/components/ReadMore/ReadMore";
 import { RightsDisplay } from "@/components/Rights/RightsDisplay";
@@ -26,6 +27,7 @@ const BlogPost = ({ post }: BlogPostProps) => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [localLikes, setLocalLikes] = useState(post.likes);
   const [isLiked, setIsLiked] = useState(post.isLiked || false);
+  const navigate = useNavigate();
   
   const { toggleLike, isLiking } = useLikes();
 
@@ -65,10 +67,13 @@ const BlogPost = ({ post }: BlogPostProps) => {
     return Promise.resolve();
   };
 
-  // Process content for math and code
+  // Process content for math, code, hashtags, and markdown
   const processContent = (content: string) => {
-    // Split content by code blocks
-    const parts = content.split(/(```[\s\S]*?```|\$\$[\s\S]*?\$\$|\$[^$]*?\$)/);
+    // First process hashtags
+    let processedContent = content.replace(/#(\w+)/g, '<span class="hashtag text-primary font-medium cursor-pointer hover:underline">#$1</span>');
+    
+    // Split content by code blocks, math, and preserve hashtags
+    const parts = processedContent.split(/(```[\s\S]*?```|\$\$[\s\S]*?\$\$|\$[^$]*?\$|<span class="hashtag[^>]*>.*?<\/span>)/);
     
     return parts.map((part, index) => {
       // Code blocks
@@ -104,7 +109,20 @@ const BlogPost = ({ post }: BlogPostProps) => {
         );
       }
       
-      // Regular text
+      // Hashtags
+      if (part.includes('hashtag')) {
+        return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
+      }
+      
+      // Regular text with markdown-like formatting
+      const withBold = part.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      const withItalic = withBold.replace(/\*(.*?)\*/g, '<em>$1</em>');
+      const withLinks = withItalic.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-primary hover:underline" target="_blank" rel="noopener noreferrer">$1</a>');
+      
+      if (withLinks !== part) {
+        return <span key={index} dangerouslySetInnerHTML={{ __html: withLinks }} />;
+      }
+      
       return <span key={index}>{part}</span>;
     });
   };
@@ -131,7 +149,10 @@ const BlogPost = ({ post }: BlogPostProps) => {
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h3 className="font-semibold text-lg leading-tight hover:text-primary cursor-pointer transition-colors">
+                <h3 
+                  className="font-semibold text-lg leading-tight hover:text-primary cursor-pointer transition-colors"
+                  onClick={() => navigate(`/post/${post.id}`)}
+                >
                   {post.title}
                 </h3>
                 <div className="flex items-center space-x-2 text-sm text-muted-foreground mt-1">
@@ -150,7 +171,7 @@ const BlogPost = ({ post }: BlogPostProps) => {
 
           {/* Content based on post type */}
           {post.type === 'photo' && post.metadata?.imageUrl && (
-            <div className="mb-4 rounded-lg overflow-hidden cursor-pointer" onClick={() => setLightboxOpen(true)}>
+            <div className="mb-4 rounded-lg overflow-hidden cursor-pointer relative" onClick={() => setLightboxOpen(true)}>
               <img 
                 src={post.metadata.imageUrl} 
                 alt={post.metadata.imageAlt || post.title}
