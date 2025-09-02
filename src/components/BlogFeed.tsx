@@ -63,7 +63,8 @@ const BlogFeed = () => {
     <div className="min-h-screen bg-gradient-subtle">
       <div className="flex">
         {/* Sidebar */}
-        <div className="w-80 min-h-screen bg-background border-r border-border p-6 fixed left-0 top-0 overflow-y-auto">
+        <div className="w-80 h-screen bg-background border-r border-border fixed left-0 top-0 overflow-y-auto">
+          <div className="p-6">
           <Sidebar
             selectedCategory={selectedCategory}
             selectedTag={selectedTag}
@@ -72,6 +73,7 @@ const BlogFeed = () => {
             categories={categories}
             tags={popularTags}
           />
+          </div>
         </div>
 
         {/* Main Content */}
