@@ -283,7 +283,7 @@ const BlogPost = ({ post }: BlogPostProps) => {
                     text: post.excerpt,
                     url: window.location.href
                   });
-                }
+export { BlogPost };
               }}
             >
               <Share2 className="w-4 h-4" />

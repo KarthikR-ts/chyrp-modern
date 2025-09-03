@@ -32,7 +32,8 @@ export function Sidebar({
   onCategorySelect, 
   onTagSelect, 
   categories, 
-  tags 
+  tags,
+  user
 }: SidebarProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
