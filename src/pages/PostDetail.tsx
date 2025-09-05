@@ -7,6 +7,7 @@ import { RightsDisplay } from '@/components/Rights/RightsDisplay';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
 import { BlogPost as BlogPostType } from '@/types/blog';
+import { PostMetadata } from '@/types/blog';
 import { useBlog } from '@/hooks/useBlog';
 import { usePostActions } from '@/hooks/usePostActions';
 import { supabase } from '@/integrations/supabase/client';
@@ -131,7 +132,7 @@ export default function PostDetail() {
               isApproved: comment.is_approved,
               parentId: comment.parent_id
             })) || [],
-            metadata: postData.metadata || {},
+            metadata: (postData.metadata as PostMetadata) || {},
             webmentions: postData.webmentions?.map((wm: any) => ({
               id: wm.id,
               source: wm.source_url,
@@ -177,7 +178,7 @@ export default function PostDetail() {
   const handleLikeToggle = async (postId: string, currentLiked: boolean) => {
     try {
       const result = await toggleLike(postId);
-      return result?.liked ?? !currentLiked;
+      return result ? true : !currentLiked;
     } catch (error) {
       console.error('Failed to toggle like:', error);
       return currentLiked;
@@ -266,8 +267,6 @@ export default function PostDetail() {
         <div className="space-y-8">
           <BlogPost
             post={post}
-            onLikeToggle={handleLikeToggle}
-            isLiking={isLiking(post.id)}
           />
 
           {post.rights && (

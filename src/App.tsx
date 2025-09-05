@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import PostDetail from "./pages/PostDetail";
 import NotFound from "./pages/NotFound";
 import { Auth } from "./pages/Auth";
+import PostEditor from "./pages/PostEditor";
 
 const queryClient = new QueryClient();
 
@@ -21,7 +22,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/post/:id" element={<PostDetail />} />
+            <Route path="/editor" element={<PostEditor />} />
+            <Route path="/editor/:id" element={<PostEditor />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

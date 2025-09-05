@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { BlogPost } from '@/components/BlogPost';
-import { BlogHeader } from '@/components/BlogHeader';
+import BlogPost from '@/components/BlogPost';
+import BlogHeader from '@/components/BlogHeader';
 import { Sidebar } from '@/components/Sidebar/Sidebar';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
@@ -14,10 +14,11 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { LogIn, User, LogOut } from 'lucide-react';
 
-export function BlogFeed() {
+function BlogFeed() {
   const [selectedCategory, setSelectedCategory] = useState<string>('');
   const [selectedTag, setSelectedTag] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isThemeCustomizerOpen, setIsThemeCustomizerOpen] = useState(false);
   
   const { user, signOut, loading: authLoading } = useAuth();
   const { posts, categories, tags, loading, error } = useBlog(selectedCategory, selectedTag, searchTerm);
@@ -27,9 +28,11 @@ export function BlogFeed() {
     return posts;
   }, [posts]);
 
-  const { visibleItems: visiblePosts, hasMore, loadMoreRef } = useInfiniteScroll(
-    filteredPosts,
-    5
+  const { isFetching, setSentinel } = useInfiniteScroll(
+    async () => {
+      // Future implementation for pagination
+    },
+    false // No more items for now
   );
 
   const handleLikeToggle = async (postId: string, currentLiked: boolean) => {
@@ -70,6 +73,11 @@ export function BlogFeed() {
                     <span className="text-sm text-muted-foreground">
                       Welcome, {user.email}
                     </span>
+                    <Link to="/editor">
+                      <Button variant="outline" size="sm">
+                        New Post
+                      </Button>
+                    </Link>
                     <Button variant="outline" size="sm" onClick={handleLogout}>
                       <LogOut className="w-4 h-4 mr-1" />
                       Logout
@@ -85,7 +93,10 @@ export function BlogFeed() {
                 )}
               </>
             )}
-            <ThemeCustomizer />
+            <ThemeCustomizer 
+              isOpen={isThemeCustomizerOpen}
+              onClose={() => setIsThemeCustomizerOpen(false)}
+            />
           </div>
         </div>
 
@@ -96,9 +107,8 @@ export function BlogFeed() {
               selectedTag={selectedTag}
               onCategorySelect={setSelectedCategory}
               onTagSelect={setSelectedTag}
-              categories={categories}
-              tags={tags}
-              user={user}
+              categories={categories.map(c => c.name)}
+              tags={tags.map(t => t.name)}
             />
           </aside>
 
@@ -111,23 +121,21 @@ export function BlogFeed() {
               <div className="text-center py-8 text-destructive">
                 Error loading posts: {error}
               </div>
-            ) : visiblePosts.length > 0 ? (
+            ) : filteredPosts.length > 0 ? (
               <>
-                {visiblePosts.map((post) => (
+                {filteredPosts.map((post) => (
                   <BlogPost
                     key={post.id}
                     post={post}
-                    onLikeToggle={handleLikeToggle}
-                    isLiking={isLiking(post.id)}
-                    onViewIncrement={() => incrementViews(post.id)}
                   />
                 ))}
                 
-                {hasMore && (
-                  <div ref={loadMoreRef} className="text-center py-4 text-muted-foreground">
+                {isFetching && (
+                  <div className="text-center py-4 text-muted-foreground">
                     Loading more posts...
                   </div>
                 )}
+                <div ref={setSentinel} />
               </>
             ) : (
               <div className="text-center py-8 text-muted-foreground">
@@ -140,3 +148,5 @@ export function BlogFeed() {
     </div>
   );
 }
+
+export default BlogFeed;

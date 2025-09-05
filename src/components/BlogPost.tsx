@@ -1,281 +1,226 @@
-import { BlogPost as BlogPostType } from "@/types/blog";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { formatDistanceToNow } from "date-fns";
-import { FileText, Camera, Quote, ExternalLink, Heart, MessageCircle, Share2, Eye, Image, Code } from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useLikes } from "@/hooks/useLikes";
-import { ReadMore } from "@/components/ReadMore/ReadMore";
-import { RightsDisplay } from "@/components/Rights/RightsDisplay";
-import { PostViews } from "@/components/PostViews/PostViews";
-import { WebmentionsDisplay } from "@/components/Webmentions/WebmentionsDisplay";
-import { CommentsSection } from "@/components/Comments/CommentsSection";
-import { Lightbox } from "@/components/Lightbox/Lightbox";
-import { CodeHighlighter } from "@/components/CodeHighlighter/CodeHighlighter";
-import { MathRenderer } from "@/components/MathRenderer/MathRenderer";
-import { EasyEmbed } from "@/components/EasyEmbed/EasyEmbed";
+import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { formatDistanceToNow } from 'date-fns';
+import { Heart, MessageCircle, Share2, Eye, User, ChevronDown, ChevronUp, Play, Pause, Volume2, VolumeX } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { BlogPost as BlogPostType } from '@/types/blog';
+import { ReadMore } from '@/components/ReadMore/ReadMore';
+import { PostViews } from '@/components/PostViews/PostViews';
+import ReadingTime from '@/components/ReadingTime/ReadingTime';
+import ReadingProgress from '@/components/ReadingProgress/ReadingProgress';
 
 interface BlogPostProps {
   post: BlogPostType;
 }
 
-const BlogPost = ({ post }: BlogPostProps) => {
-  const [showComments, setShowComments] = useState(false);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [localLikes, setLocalLikes] = useState(post.likes);
-  const [isLiked, setIsLiked] = useState(post.isLiked || false);
-  const navigate = useNavigate();
-  
-  const { toggleLike, isLiking } = useLikes();
+function BlogPost({ post }: BlogPostProps) {
+  const [liked, setLiked] = useState(false);
+  const [likes, setLikes] = useState(post.likes);
+  const [showFullContent, setShowFullContent] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
 
-  const getPostIcon = (type: BlogPostType['type']) => {
-    switch (type) {
-      case 'text':
-        return <FileText className="w-4 h-4" />;
-      case 'photo':
-        return <Camera className="w-4 h-4" />;
-      case 'quote':
-        return <Quote className="w-4 h-4" />;
-      case 'link':
-        return <ExternalLink className="w-4 h-4" />;
-      case 'video':
-        return <Camera className="w-4 h-4" />;
-      case 'audio':
-        return <FileText className="w-4 h-4" />;
+  const handleLikeToggle = async () => {
+    try {
+      setLiked(!liked);
+      setLikes(prev => liked ? prev - 1 : prev + 1);
+    } catch (error) {
+      console.error('Failed to toggle like:', error);
+      setLiked(liked);
+      setLikes(post.likes);
     }
   };
 
-  const getPostTypeColor = (type: BlogPostType['type']) => {
-    return `post-type-${type === 'video' || type === 'audio' ? 'text' : type}`;
+  const handlePlayPause = () => {
+    setIsPlaying(!isPlaying);
   };
 
-  const handleLike = async () => {
-    if (isLiking(post.id)) return;
-    
-    const newLiked = await toggleLike(post.id, isLiked);
-    setIsLiked(newLiked);
-    setLocalLikes(prev => newLiked ? prev + 1 : prev - 1);
+  const handleMuteToggle = () => {
+    setIsMuted(!isMuted);
   };
 
-  const handleAddComment = async (commentData: any) => {
-    // In a real app, this would call the API
-    console.log('Adding comment:', commentData);
-    // Mock success response
-    return Promise.resolve();
-  };
-
-  // Process content for math, code, hashtags, and markdown
-  const processContent = (content: string) => {
-    // First process hashtags
-    let processedContent = content.replace(/#(\w+)/g, '<span class="hashtag text-primary font-medium cursor-pointer hover:underline">#$1</span>');
-    
-    // Split content by code blocks, math, and preserve hashtags
-    const parts = processedContent.split(/(```[\s\S]*?```|\$\$[\s\S]*?\$\$|\$[^$]*?\$|<span class="hashtag[^>]*>.*?<\/span>)/);
-    
-    return parts.map((part, index) => {
-      // Code blocks
-      if (part.startsWith('```') && part.endsWith('```')) {
-        const lines = part.slice(3, -3).split('\n');
-        const language = lines[0].trim();
-        const code = lines.slice(1).join('\n');
-        
+  const renderPostType = () => {
+    switch (post.type) {
+      case 'photo':
         return (
-          <div key={index} className="my-4">
-            <CodeHighlighter code={code} language={language} />
+          <div className="mb-4">
+            <img 
+              src={post.metadata?.image || '/placeholder.svg'} 
+              alt={post.title}
+              className="w-full rounded-lg object-cover max-h-96"
+            />
           </div>
         );
-      }
       
-      // Display math
-      if (part.startsWith('$$') && part.endsWith('$$')) {
+      case 'quote':
         return (
-          <div key={index} className="my-4">
-            <MathRenderer displayMode={true}>
-              {part.slice(2, -2)}
-            </MathRenderer>
+          <blockquote className="border-l-4 border-primary pl-4 italic text-lg mb-4">
+            "{post.content}"
+            {post.metadata?.quoteAuthor && (
+              <footer className="text-sm text-muted-foreground mt-2">
+                — {post.metadata.quoteAuthor}
+              </footer>
+            )}
+          </blockquote>
+        );
+      
+      case 'link':
+        return (
+          <div className="mb-4">
+            <a 
+              href={post.metadata?.url as string}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+            >
+              <div className="text-sm text-muted-foreground">{post.metadata?.domain}</div>
+              <div className="font-medium">{post.metadata?.linkTitle || post.title}</div>
+              <div className="text-sm text-muted-foreground mt-1">{post.metadata?.description}</div>
+            </a>
           </div>
         );
-      }
       
-      // Inline math
-      if (part.startsWith('$') && part.endsWith('$')) {
+      case 'video':
         return (
-          <MathRenderer key={index} displayMode={false}>
-            {part.slice(1, -1)}
-          </MathRenderer>
+          <div className="mb-4">
+            <div className="relative bg-black rounded-lg overflow-hidden">
+              <video 
+                className="w-full"
+                controls
+                poster={post.metadata?.thumbnail as string}
+              >
+                <source src={post.metadata?.videoUrl as string} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          </div>
         );
-      }
       
-      // Hashtags
-      if (part.includes('hashtag')) {
-        return <span key={index} dangerouslySetInnerHTML={{ __html: part }} />;
-      }
+      case 'audio':
+        return (
+          <div className="mb-4">
+            <div className="flex items-center space-x-4 p-4 bg-muted rounded-lg">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handlePlayPause}
+              >
+                {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
+              </Button>
+              
+              <div className="flex-1">
+                <div className="text-sm font-medium">{post.title}</div>
+                <div className="text-xs text-muted-foreground">Audio Post</div>
+              </div>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleMuteToggle}
+              >
+                {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+              </Button>
+            </div>
+            <audio 
+              className="w-full mt-2"
+              controls
+              muted={isMuted}
+            >
+              <source src={post.metadata?.audioUrl as string} type="audio/mpeg" />
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+        );
       
-      // Regular text with markdown-like formatting
-      const withBold = part.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      const withItalic = withBold.replace(/\*(.*?)\*/g, '<em>$1</em>');
-      const withLinks = withItalic.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-primary hover:underline" target="_blank" rel="noopener noreferrer">$1</a>');
-      
-      if (withLinks !== part) {
-        return <span key={index} dangerouslySetInnerHTML={{ __html: withLinks }} />;
-      }
-      
-      return <span key={index}>{part}</span>;
-    });
+      default:
+        return null;
+    }
   };
-
-  const images = post.metadata?.imageUrl ? [{
-    src: post.metadata.imageUrl,
-    alt: post.metadata.imageAlt || post.title,
-    title: post.title
-  }] : [];
 
   return (
-    <Card className="blog-card overflow-hidden">
-      {/* Post type indicator */}
-      <div className="flex">
-        <div className={`post-type-indicator ${getPostTypeColor(post.type)}`} />
-        <div className="flex-1 p-6">
-          {/* Header */}
-          <div className="flex items-start justify-between mb-4">
+    <>
+      <ReadingProgress />
+      <Card className="overflow-hidden hover:shadow-lg transition-shadow">
+        <CardHeader>
+          <div className="flex items-start justify-between">
             <div className="flex items-center space-x-3">
               <Avatar className="w-10 h-10">
-                <AvatarImage src={post.author.avatar} />
+                <AvatarImage src={post.author.avatar} alt={post.author.name} />
                 <AvatarFallback>
-                  {post.author.name.charAt(0).toUpperCase()}
+                  <User className="w-4 h-4" />
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h3 
-                  className="font-semibold text-lg leading-tight hover:text-primary cursor-pointer transition-colors"
-                  onClick={() => navigate(`/post/${post.id}`)}
-                >
-                  {post.title}
-                </h3>
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground mt-1">
-                  <span>by {post.author.name}</span>
-                  <span>•</span>
-                  <span>{formatDistanceToNow(new Date(post.publishedAt), { addSuffix: true })}</span>
-                  <span>•</span>
-                  <PostViews postId={post.id} initialViews={post.views} />
+                <div className="font-medium">{post.author.name}</div>
+                <div className="text-sm text-muted-foreground">
+                  {formatDistanceToNow(new Date(post.publishedAt), { addSuffix: true })}
                 </div>
               </div>
             </div>
-            <div className={`p-2 rounded-lg bg-${post.type === 'video' || post.type === 'audio' ? 'text' : post.type}-post/10 text-${post.type === 'video' || post.type === 'audio' ? 'text' : post.type}-post`}>
-              {getPostIcon(post.type)}
+            <div className="flex items-center space-x-2">
+              <ReadingTime content={post.content} />
+              <Badge variant="secondary" className="text-xs">
+                {post.type.charAt(0).toUpperCase() + post.type.slice(1)}
+              </Badge>
             </div>
           </div>
+        </CardHeader>
 
-          {/* Content based on post type */}
-          {post.type === 'photo' && post.metadata?.imageUrl && (
-            <div className="mb-4 rounded-lg overflow-hidden cursor-pointer relative" onClick={() => setLightboxOpen(true)}>
-              <img 
-                src={post.metadata.imageUrl} 
-                alt={post.metadata.imageAlt || post.title}
-                className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
-              />
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/20">
-                <Button variant="ghost" size="sm" className="text-white">
-                  <Image className="w-4 h-4 mr-2" />
-                  View Full Size
-                </Button>
-              </div>
-            </div>
-          )}
+        <CardContent className="space-y-4">
+          <Link to={`/post/${post.id}`}>
+            <h2 className="text-xl font-bold hover:text-primary transition-colors cursor-pointer">
+              {post.title}
+            </h2>
+          </Link>
 
-          {post.type === 'quote' && (
-            <blockquote className="border-l-4 border-quote-post pl-6 my-6 italic text-xl leading-relaxed">
-              "{post.content}"
-              {post.metadata?.quoteAuthor && (
-                <footer className="text-base text-muted-foreground mt-3 not-italic">
-                  — {post.metadata.quoteAuthor}
-                </footer>
-              )}
-            </blockquote>
-          )}
+          {renderPostType()}
 
-          {post.type === 'link' && (
-            <div className="mb-4">
-              <ReadMore content={post.content} className="mb-4" />
-              {post.metadata?.linkUrl && (
-                <EasyEmbed url={post.metadata.linkUrl} />
-              )}
-            </div>
-          )}
-
-          {(post.type === 'text' || post.type === 'video' || post.type === 'audio') && (
-            <div className="mb-4">
-              <ReadMore 
-                content={post.metadata?.hasMath || post.content.includes('```') 
-                  ? post.content 
-                  : post.content
-                } 
-                maxLength={400}
-                className="prose prose-sm max-w-none"
-              />
-              {(post.metadata?.hasMath || post.content.includes('```')) && (
-                <div className="mt-4">
-                  {processContent(post.content)}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Category */}
-          <div className="flex items-center space-x-2 mb-3">
-            <Badge variant="outline" className="hover:bg-accent cursor-pointer hover-lift">
-              {post.category.name}
-            </Badge>
+          <div className="prose prose-sm max-w-none">
+            <ReadMore 
+              content={post.content} 
+              maxLength={300}
+            />
           </div>
 
-          {/* Tags */}
-          {post.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-4">
-              {post.tags.map((tag, index) => (
-                <Badge key={index} variant="secondary" className="hover:bg-accent hover-lift cursor-pointer">
-                  {tag.name}
+          {post.tags && post.tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {post.tags.map((tag) => (
+                <Badge key={tag.id} variant="outline" className="text-xs">
+                  #{tag.name}
                 </Badge>
               ))}
             </div>
           )}
 
-          {/* Rights */}
-          {post.rights && (
-            <RightsDisplay rights={post.rights} />
-          )}
-
-          {/* Actions */}
-          <div className="flex items-center justify-between pt-4 border-t mt-4">
+          <div className="flex items-center justify-between pt-4 border-t">
             <div className="flex items-center space-x-4">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleLike}
-                disabled={isLiking(post.id)}
-                className={`transition-colors hover-lift ${isLiked ? 'text-red-500' : 'text-muted-foreground hover:text-foreground'}`}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLikeToggle}
+                className={`hover-lift ${liked ? 'text-red-500' : ''}`}
               >
-                <Heart className={`w-4 h-4 mr-1 ${isLiked ? 'fill-current' : ''}`} />
-                {localLikes}
+                <Heart className={`w-4 h-4 mr-1 ${liked ? 'fill-current' : ''}`} />
+                {likes}
               </Button>
               
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setShowComments(!showComments)}
-                className="text-muted-foreground hover:text-foreground hover-lift"
-              >
-                <MessageCircle className="w-4 h-4 mr-1" />
-                {post.comments.length}
-              </Button>
+              <Link to={`/post/${post.id}#comments`}>
+                <Button variant="ghost" size="sm" className="hover-lift">
+                  <MessageCircle className="w-4 h-4 mr-1" />
+                  {post.comments?.length || 0}
+                </Button>
+              </Link>
+              
+              <PostViews postId={post.id} />
             </div>
-            
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="text-muted-foreground hover:text-foreground hover-lift"
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hover-lift"
               onClick={() => {
                 if (navigator.share) {
                   navigator.share({
@@ -283,43 +228,17 @@ const BlogPost = ({ post }: BlogPostProps) => {
                     text: post.excerpt,
                     url: window.location.href
                   });
-export { BlogPost };
+                }
               }}
             >
               <Share2 className="w-4 h-4" />
             </Button>
           </div>
-        </div>
-      </div>
-
-      {/* Webmentions */}
-      {post.webmentions && post.webmentions.length > 0 && (
-        <div className="px-6 pb-4">
-          <WebmentionsDisplay webmentions={post.webmentions} />
-        </div>
-      )}
-
-      {/* Comments */}
-      {showComments && (
-        <div className="px-6 pb-6">
-          <CommentsSection
-            postId={post.id}
-            comments={post.comments}
-            onAddComment={handleAddComment}
-          />
-        </div>
-      )}
-
-      {/* Lightbox */}
-      <Lightbox
-        images={images}
-        initialIndex={0}
-        isOpen={lightboxOpen}
-        onClose={() => setLightboxOpen(false)}
-        protectionEnabled={post.rights?.license === 'all-rights-reserved'}
-      />
-    </Card>
+        </CardContent>
+      </Card>
+    </>
   );
-};
+}
 
+export { BlogPost };
 export default BlogPost;

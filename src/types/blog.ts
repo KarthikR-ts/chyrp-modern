@@ -65,15 +65,22 @@ export interface Rights {
 }
 
 export interface PostMetadata {
+  image?: string;
   imageUrl?: string;
   imageAlt?: string;
+  url?: string;
   linkUrl?: string;
-  quoteAuthor?: string;
+  domain?: string;
+  linkTitle?: string;
+  description?: string;
+  thumbnail?: string;
   videoUrl?: string;
   audioUrl?: string;
+  quoteAuthor?: string;
   embedCode?: string;
   codeLanguage?: string;
   hasMath?: boolean;
+  [key: string]: any;
 }
 
 export interface Webmention {
