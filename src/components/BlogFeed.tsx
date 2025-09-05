@@ -38,7 +38,7 @@ function BlogFeed() {
   const handleLikeToggle = async (postId: string, currentLiked: boolean) => {
     try {
       const result = await toggleLike(postId);
-      return result?.liked ?? !currentLiked;
+      return result ? (result as any).liked : !currentLiked;
     } catch (error) {
       console.error('Failed to toggle like:', error);
       return currentLiked;

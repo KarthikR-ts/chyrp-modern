@@ -51,28 +51,29 @@ export function useAuth() {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        // Fetch profile for existing session
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single()
-          .then(({ data: profileData }) => {
-            setProfile(profileData);
-            setLoading(false);
-          })
-          .catch(() => {
-            setLoading(false);
-          });
+        // Fetch profile for existing session  
+        try {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .single();
+          setProfile(profileData);
+        } catch (error) {
+          console.error('Failed to fetch profile:', error);
+        } finally {
+          setLoading(false);
+        }
       } else {
         setLoading(false);
       }
-    });
+    })();
 
     return () => subscription.unsubscribe();
   }, []);

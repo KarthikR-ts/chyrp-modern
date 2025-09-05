@@ -111,7 +111,7 @@ export function useBlog(categoryFilter?: string, tagFilter?: string, searchQuery
           name: post.profiles?.display_name || 'Unknown Author',
           email: '',
           avatar: post.profiles?.avatar_url,
-          role: post.profiles?.role || 'author' as 'admin' | 'editor' | 'author',
+          role: (post.profiles?.role || 'author') as 'admin' | 'editor' | 'author',
           bio: post.profiles?.bio
         },
         publishedAt: post.published_at || post.created_at,
@@ -149,7 +149,7 @@ export function useBlog(categoryFilter?: string, tagFilter?: string, searchQuery
           isApproved: comment.is_approved,
           parentId: comment.parent_id
         })) || [],
-        metadata: post.metadata || {},
+        metadata: (post.metadata && typeof post.metadata === 'object' ? post.metadata : {}) as any,
         webmentions: post.webmentions?.map((wm: any) => ({
           id: wm.id,
           source: wm.source_url,
